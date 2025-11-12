@@ -1,29 +1,62 @@
-# Simple pygame program
-
-# Import and initialize the pygame library
 import pygame
+import sys
+
+# Initialize Pygame
 pygame.init()
 
-# Set up the drawing window
-screen = pygame.display.set_mode([500, 500])
+# Screen settings
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+FPS = 60
 
-# Run until the user asks to quit
+# Colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+BLUE = (0, 100, 255)
+
+# Create screen
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("My First Pygame")
+clock = pygame.time.Clock()
+
+# Player settings
+player_x = 350
+player_y = 250
+player_width = 50
+player_height = 90
+player_speed = 5
+
+# Game loop
 running = True
 while running:
-
-    # Did the user click the window close button?
+    # Handle events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-
-    # Fill the background with white
-    screen.fill((255, 255, 255))
-
-    # Draw a solid blue circle in the center
-    pygame.draw.circle(screen, (0, 0, 255), (250, 250), 75)
-
-    # Flip the display
+    
+    # Get keys pressed
+    keys = pygame.key.get_pressed()
+    
+    # Move player
+    if (keys[pygame.K_LEFT] or keys[pygame.K_a]) and player_x > 0:
+        player_x -= player_speed
+    if (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and player_x < SCREEN_WIDTH - player_width:
+        player_x += player_speed
+    if (keys[pygame.K_UP] or keys[pygame.K_w]) and player_y > 0:
+        player_y -= player_speed
+    if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and player_y < SCREEN_HEIGHT - player_height:
+        player_y += player_speed
+    
+    # Draw everything
+    screen.fill(WHITE)
+    
+    # Draw player
+    pygame.draw.rect(screen, BLUE, (player_x, player_y, player_width, player_height))
+    
+    # Update display
     pygame.display.flip()
+    clock.tick(FPS)
 
-# Done! Time to quit.
+# Quit
 pygame.quit()
+sys.exit()
