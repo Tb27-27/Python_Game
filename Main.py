@@ -5,8 +5,8 @@ import sys
 pygame.init()
 
 # Screen settings
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1600
+SCREEN_HEIGHT = 800
 FPS = 60
 
 # Colors
@@ -29,8 +29,8 @@ player_speed = 5
 
 
 # Enemy settings
-enemy_x = 350
-enemy_y = 250
+enemy_x = 100
+enemy_y = 100
 enemy_width = 60
 enemy_height = 100
 enemy_speed = 5
@@ -63,13 +63,13 @@ while running:
         
     
     # Move player
-    if moveInput("left") and player_x > 0:
+    if moveInput("left", keys) and player_x > 0:
         player_x -= player_speed
-    if moveInput("right") and player_x < SCREEN_WIDTH - player_width:
+    if moveInput("right", keys) and player_x < SCREEN_WIDTH - player_width:
         player_x += player_speed
-    if moveInput("up") and player_y > 0:
+    if moveInput("up", keys) and player_y > 0:
         player_y -= player_speed
-    if moveInput("down") and player_y < SCREEN_HEIGHT - player_height:
+    if moveInput("down", keys) and player_y < SCREEN_HEIGHT - player_height:
         player_y += player_speed
     
     # Draw everything
