@@ -1,90 +1,121 @@
 import pygame
 import sys
+from src.player import Player
+from src.enemy import Enemy
+from src.map import Map
+from src.light_system import LightSystem
+from src.ui import UI
+from src.colors import * 
 
-# Initialize Pygame
 pygame.init()
 
-# Screen settings
-SCREEN_WIDTH = 1600
-SCREEN_HEIGHT = 800
-FPS = 60
+GAME_CONFIG = {
+    "screen_width": 1600,
+    "screen_height": 800,
+    "target_fps": 60,
+    "game_title": "Pythy - Survival Horror"
+}
 
-# Colors
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-BLUE = (0, 100, 255)
-RED = (255, 0, 0)
-
-# Create screen
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Pythy")
-clock = pygame.time.Clock()
-
-# Player settings
-player_x = 350
-player_y = 250
-player_width = 50
-player_height = 90
-player_speed = 5
-
-
-# Enemy settings
-enemy_x = 100
-enemy_y = 100
-enemy_width = 60
-enemy_height = 100
-enemy_speed = 5
-
-# move input bool
-def moveInput(direction, keys):
-    if direction == "left" and (keys[pygame.K_LEFT] or keys[pygame.K_a]):
-        return True
-    elif direction == "right" and (keys[pygame.K_RIGHT] or keys[pygame.K_d]):
-        return True
-    elif direction == "up" and (keys[pygame.K_UP] or keys[pygame.K_w]):
-        return True
-    elif direction == "down" and (keys[pygame.K_DOWN] or keys[pygame.K_s]):
-        return True
-    else:
-        return False
-    
-
-# Game loop
-running = True
-while running:
-    # Handle events
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-    
-    # Get keys pressed
-    keys = pygame.key.get_pressed()
-
+class Game:
+    def __init__(self):
+        self.game_window = pygame.display.set_mode((GAME_CONFIG["screen_width"], GAME_CONFIG["screen_height"]))
+        pygame.display.set_caption(GAME_CONFIG["game_title"])
+        self.game_clock = pygame.time.Clock()
+        self.is_running = True
+        self.is_paused = False
         
-    
-    # Move player
-    if moveInput("left", keys) and player_x > 0:
-        player_x -= player_speed
-    if moveInput("right", keys) and player_x < SCREEN_WIDTH - player_width:
-        player_x += player_speed
-    if moveInput("up", keys) and player_y > 0:
-        player_y -= player_speed
-    if moveInput("down", keys) and player_y < SCREEN_HEIGHT - player_height:
-        player_y += player_speed
-    
-    # Draw everything
-    screen.fill(WHITE)
-    
-    # Draw player
-    pygame.draw.rect(screen, BLUE, (player_x, player_y, player_width, player_height))
+        self.player_character = Player(350, 250)
+        self.enemy_list = [Enemy(100, 100), Enemy(800, 400)]
+        self.game_map = Map("assets/maps/cathedral_1.json")
+        self.lighting_system = LightSystem(GAME_CONFIG["screen_width"], GAME_CONFIG["screen_height"])
+        self.user_interface = UI(GAME_CONFIG["screen_width"], GAME_CONFIG["screen_height"])
 
-    # Draw player
-    pygame.draw.rect(screen, RED, (enemy_x, enemy_y, enemy_width, enemy_height))
-    
-    # Update display
-    pygame.display.flip()
-    clock.tick(FPS)
+    def handle_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.is_running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    self.is_paused = not self.is_paused
+                if event.key in (pygame.K_e, pygame.K_SPACE):
+                    self.player_character.interact()
 
-# Quit
-pygame.quit()
-sys.exit()
+    def update(self):
+        if self.is_paused:
+            return
+        
+        keys = pygame.key.get_pressed()
+        movement_delta_x = movement_delta_y = 0
+        
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+            movement_delta_x -= self.player_character.move_speed
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+            movement_delta_x += self.player_character.move_speed
+        if keys[pygame.K_UP] or keys[pygame.K_w]:
+            movement_delta_y -= self.player_character.move_speed
+        if keys[pygame.K_DOWN] or keys[pygame.K_s]:
+            movement_delta_y += self.player_character.move_speed
+        
+        self.player_character.move(movement_delta_x, movement_delta_y, self.game_map.walls)
+        
+        player_world_position = (self.player_character.pos_x, self.player_character.pos_y)
+        for current_enemy in self.enemy_list:
+            current_enemy.update(player_world_position, self.game_map.walls)
+            if self.detect_collision(self.player_character, current_enemy):
+                self.player_character.take_damage(1)
+        
+        if self.player_character.health <= 0:
+            self.game_over()
+
+    def detect_collision(self, obj1, obj2):
+        return (
+            obj1.pos_x < obj2.pos_x + obj2.size_width and
+            obj1.pos_x + obj1.size_width > obj2.pos_x and
+            obj1.pos_y < obj2.pos_y + obj2.size_height and
+            obj1.pos_y + obj1.size_height > obj2.pos_y
+        )
+
+    def draw(self):
+        self.game_window.fill(DARK_GRAY)
+        self.game_map.draw(self.game_window)
+        for enemy in self.enemy_list:
+            enemy.draw(self.game_window)
+        self.player_character.draw(self.game_window)
+        self.lighting_system.apply_lighting(self.game_window, (self.player_character.pos_x, self.player_character.pos_y))
+        self.user_interface.draw(self.game_window, self.player_character)
+        if self.is_paused:
+            self.draw_pause_screen()
+        pygame.display.flip()
+
+    def draw_pause_screen(self):
+        overlay = pygame.Surface((GAME_CONFIG["screen_width"], GAME_CONFIG["screen_height"]))
+        overlay.set_alpha(128)
+        overlay.fill(BLACK)
+        self.game_window.blit(overlay, (0, 0))
+        font = pygame.font.Font(None, 74)
+        text = font.render("PAUSED", True, WHITE)
+        text_rect = text.get_rect(center=(GAME_CONFIG["screen_width"] // 2, GAME_CONFIG["screen_height"] // 2))
+        self.game_window.blit(text, text_rect)
+
+    def game_over(self):
+        self.game_window.fill(BLACK)
+        font = pygame.font.Font(None, 74)
+        text = font.render("GAME OVER", True, RED)
+        text_rect = text.get_rect(center=(GAME_CONFIG["screen_width"] // 2, GAME_CONFIG["screen_height"] // 2))
+        self.game_window.blit(text, text_rect)
+        pygame.display.flip()
+        pygame.time.wait(3000)
+        self.is_running = False
+
+    def run(self):
+        while self.is_running:
+            self.handle_events()
+            self.update()
+            self.draw()
+            self.game_clock.tick(GAME_CONFIG["target_fps"])
+        pygame.quit()
+        sys.exit()
+
+if __name__ == "__main__":
+    game = Game()
+    game.run()

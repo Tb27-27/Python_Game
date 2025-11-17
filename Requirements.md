@@ -1,0 +1,4 @@
+pygame
+pytest
+random
+json

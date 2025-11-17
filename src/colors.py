@@ -1,0 +1,10 @@
+# Color constants voor de hele game
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+DARK_GRAY = (20, 20, 20)
+LIGHT_BLUE  = (100, 180, 255)
+BLUE = (0, 100, 255)
+RED = (255, 0, 0)
+GREEN = (0, 200, 0)
+DARK_RED = (100, 0, 0)
+GRAY = (80, 80, 80)
