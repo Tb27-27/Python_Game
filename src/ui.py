@@ -4,16 +4,16 @@ from src.colors import *
 class UI:
     # UI class voor health bar en inventory
     
-    HEALTH_BAR_WIDTH = 200
-    HEALTH_BAR_HEIGHT = 30
-    HEALTH_BAR_X = 20
-    HEALTH_BAR_Y = 20
-    TEXT_OFFSET_X = 10
+    HEALTH_BAR_WIDTH = 80
+    HEALTH_BAR_HEIGHT = 10
+    HEALTH_BAR_X = 8
+    HEALTH_BAR_Y = 8
+    TEXT_OFFSET_X = 4
     
     def __init__(self, screen_width, screen_height):
         self.screen_width = screen_width
         self.screen_height = screen_height
-        self.font = pygame.font.Font(None, 36)
+        self.font = pygame.font.Font(None, 14)
         
     def draw(self, screen, player):
         # Teken alle UI elementen
@@ -37,7 +37,7 @@ class UI:
         pygame.draw.rect(screen, GREEN, (x, y, current_bar_width, bar_height))
         
         # Border
-        pygame.draw.rect(screen, (255, 255, 255), (x, y, bar_width, bar_height), 2)
+        pygame.draw.rect(screen, (255, 255, 255), (x, y, bar_width, bar_height), 1)
         
         # Health tekst
         # TODO: Heel lelijk
@@ -49,4 +49,4 @@ class UI:
         # TODO: Inventory komt in het pauze scherm later
         # TODO: Inventory counter redundant
         inv_text = self.font.render(f"Items: {len(player.inventory)}", True, (255, 255, 255))
-        screen.blit(inv_text, (20, 60))
+        screen.blit(inv_text, (8, 22))

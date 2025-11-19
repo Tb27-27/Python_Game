@@ -9,11 +9,11 @@ class Player:
         # start pos en hoogte
         self.pos_x = float(start_x)
         self.pos_y = float(start_y)
-        self.size_width = 50
-        self.size_height = 90
+        self.size_width = 16
+        self.size_height = 32
         
         # regels
-        self.move_speed = 5
+        self.move_speed = 2
         self.health = 100
         self.max_health = 100
         self.inventory = []
@@ -25,13 +25,13 @@ class Player:
         if delta_x != 0:
             self.pos_x += delta_x
             if self._collides_with_walls(walls):
-                self.pos_x -= delta_x  # Terugdraaien bij botsing
+                self.pos_x -= delta_x
         
         # Dan verticaal
         if delta_y != 0:
             self.pos_y += delta_y
             if self._collides_with_walls(walls):
-                self.pos_y -= delta_y  # Terugdraaien bij botsing
+                self.pos_y -= delta_y
     
     def _collides_with_walls(self, walls):
         """Interne helper: check of player rect een muur raakt"""
@@ -57,10 +57,9 @@ class Player:
     def interact(self):
         """Interactie met objecten/deur/NPC (uit te breiden)"""
         print("[Interact] Player probeert iets te doen!")
-        # Later: open deur, praat met NPC, pak item, etc.
     
     def draw(self, screen):
-        """Teken de speler als blauwe rechthoek"""
+        """Teken de speler als blauwe rechthoek (zonder camera offset)"""
         player_rect = pygame.Rect(
             int(self.pos_x),
             int(self.pos_y),
@@ -68,4 +67,15 @@ class Player:
             self.size_height
         )
         pygame.draw.rect(screen, LIGHT_BLUE, player_rect)
-        pygame.draw.rect(screen, BLUE, player_rect, width=3)
+        pygame.draw.rect(screen, BLUE, player_rect, width=2)
+    
+    def draw_at_position(self, screen, x, y):
+        """Teken de speler op een specifieke scherm positie (voor camera)"""
+        player_rect = pygame.Rect(
+            int(x),
+            int(y),
+            self.size_width,
+            self.size_height
+        )
+        pygame.draw.rect(screen, LIGHT_BLUE, player_rect)
+        pygame.draw.rect(screen, BLUE, player_rect, width=2)

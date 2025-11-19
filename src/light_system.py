@@ -4,7 +4,7 @@ import math
 class LightSystem:
     """Fog-of-war lighting: alleen binnen lichtcirkel zichtbaar, rest pikzwart"""
     
-    def __init__(self, screen_width, screen_height, light_radius=300):
+    def __init__(self, screen_width, screen_height, light_radius=80):
         self.screen_width_pixels = screen_width
         self.screen_height_pixels = screen_height
         self.light_radius_pixels = light_radius
@@ -49,11 +49,11 @@ class LightSystem:
             (self.screen_width_pixels, self.screen_height_pixels), 
             pygame.SRCALPHA
         )
-        darkness_overlay.fill((0, 0, 0, 255))  # 100% zwart
+        darkness_overlay.fill((0, 0, 0, 255))
         
         # Bereken waar het licht moet schijnen (midden speler)
-        player_torso_x = int(player_position[0] + 25)
-        player_torso_y = int(player_position[1] + 45)
+        player_torso_x = int(player_position[0] + 8)
+        player_torso_y = int(player_position[1] + 16)
         light_mask_offset_x = player_torso_x - self.light_radius_pixels
         light_mask_offset_y = player_torso_y - self.light_radius_pixels
         

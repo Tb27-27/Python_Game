@@ -139,7 +139,7 @@ Geef in een tabel weer wat je per week gaat doen, en hoeveel uren/commits per we
 - Github Aanmaken
 - Libraries opzoeken
 - gameplay-loop 
-- mechanics (lichtcirkel, fog-of-war, vijanden, inventaris). 
+- mechanics lichtcirkel, fog-of-war, vijanden 
 - Functionele beschrijving opstellen. 
 - Schets (handgetekend) voor structuur
 - Concept Inleveren
