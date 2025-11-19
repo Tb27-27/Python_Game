@@ -2,6 +2,7 @@ import pygame
 import sys
 from src.player import Player
 from src.enemy import Enemy
+from src.enemy import Dog
 from src.map import Map
 from src.light_system import LightSystem
 from src.ui import UI
@@ -25,7 +26,7 @@ class Game:
         self.is_paused = False
         
         self.player_character = Player(350, 250)
-        self.enemy_list = [Enemy(100, 100), Enemy(800, 400)]
+        self.enemy_list = [Dog(100, 100), Dog(800, 400)]
         self.game_map = Map("assets/maps/cathedral_1.json")
         self.lighting_system = LightSystem(GAME_CONFIG["screen_width"], GAME_CONFIG["screen_height"])
         self.user_interface = UI(GAME_CONFIG["screen_width"], GAME_CONFIG["screen_height"])

@@ -13,7 +13,7 @@ class LightSystem:
         self.radial_light_mask = self._generate_radial_light_mask()
     
     def _generate_radial_light_mask(self):
-        """Genereer perfect rond gradient mask voor zacht licht"""
+        """Genereer perfect cirkel gradient mask voor zacht licht"""
         mask_size = self.light_radius_pixels * 2
         light_mask = pygame.Surface((mask_size, mask_size), pygame.SRCALPHA)
         
@@ -42,7 +42,7 @@ class LightSystem:
         return light_mask
     
     def apply_lighting(self, screen, player_position):
-        """Pas fog-of-war toe: zwarte overlay met lichtgat bij speler"""
+        """Pas fog-of-war toe: zwarte overlay met lichtcirkel bij speler"""
         
         # Maak volledig zwarte overlay (alles onzichtbaar)
         darkness_overlay = pygame.Surface(
