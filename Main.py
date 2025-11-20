@@ -110,14 +110,15 @@ class Game:
             dy += self.player_character.move_speed
         
         self.player_character.move(dx, dy, self.game_map.walls)
+        self.player_character.update()
         self.camera.follow_player(self.player_character)
-        
+
         player_pos = (self.player_character.pos_x, self.player_character.pos_y)
-        
+
         for enemy in self.enemy_list:
             enemy.update(player_pos, self.game_map.walls)
             if self.detect_collision(self.player_character, enemy):
-                self.player_character.take_damage(1)
+                self.player_character.take_damage(10)
         
         if self.player_character.health <= 0:
             self.game_over()

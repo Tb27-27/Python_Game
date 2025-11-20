@@ -11,12 +11,17 @@ class Player:
         self.pos_y = float(start_y)
         self.size_width = 48
         self.size_height = 92
-        
+
         # regels
         self.move_speed = 2
         self.health = 100
         self.max_health = 100
         self.inventory = []
+
+        # Invincibility frames (i-frames)
+        self.invincible = False
+        self.invincibility_timer = 0
+        self.invincibility_duration = 150  # 2.5 seconden bij 60 FPS
     
     def move(self, delta_x, delta_y, walls):
         """Beweeg speler met aparte X- en Y-collision (geen 'tunneling')"""
@@ -46,9 +51,22 @@ class Player:
                 return True
         return False
     
+    def update(self):
+        """Update player state (i-frames, etc.)"""
+        # Update invincibility timer
+        if self.invincibility_timer > 0:
+            self.invincibility_timer -= 1
+            self.invincible = True
+        else:
+            self.invincible = False
+
     def take_damage(self, amount):
         """Neem schade en zorg dat health nooit onder 0 komt"""
-        self.health = max(0, self.health - amount)
+        # Alleen schade nemen als niet invincible
+        if not self.invincible:
+            self.health = max(0, self.health - amount)
+            # Start invincibility frames
+            self.invincibility_timer = self.invincibility_duration
     
     def heal(self, amount):
         """Herstel health, maar nooit boven maximum"""
@@ -71,6 +89,10 @@ class Player:
     
     def draw_at_position(self, screen, x, y):
         """Teken de speler op een specifieke scherm positie (voor camera)"""
+        # Flash effect tijdens invincibility (elke 10 frames wissel)
+        if self.invincible and (self.invincibility_timer // 5) % 2 == 0:
+            return  # Skip tekenen = flash effect
+
         player_rect = pygame.Rect(
             int(x),
             int(y),

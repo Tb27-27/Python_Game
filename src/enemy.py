@@ -60,22 +60,47 @@ class Enemy:
         
         return distance, dx, dy
     
-    def move(self, dx, dy, speed):
+    def move(self, dx, dy, speed, walls):
         """
-        Beweeg de vijand in een bepaalde richting.
+        Beweeg de vijand in een bepaalde richting met wall collision.
         dx, dy = richting vector (wordt genormaliseerd)
         speed = snelheid in pixels per frame
+        walls = lijst van pygame.Rect objecten voor collision
         """
 
         # Bereken lengte van de richting vector
         distance = math.hypot(dx, dy)
-        
+
         # Voorkom delen door 0
         if distance > 0:
+            # Normaliseer richting en vermenigvuldig met snelheid
+            move_x = (dx / distance) * speed
+            move_y = (dy / distance) * speed
 
-            # richting  vermenigvuldig met snelheid
-            self.pos_x += (dx / distance) * speed
-            self.pos_y += (dy / distance) * speed
+            # Probeer eerst horizontaal te bewegen
+            if move_x != 0:
+                self.pos_x += move_x
+                if self._collides_with_walls(walls):
+                    self.pos_x -= move_x
+
+            # Dan verticaal
+            if move_y != 0:
+                self.pos_y += move_y
+                if self._collides_with_walls(walls):
+                    self.pos_y -= move_y
+
+    def _collides_with_walls(self, walls):
+        """Check of enemy rect een muur raakt"""
+        enemy_rect = pygame.Rect(
+            self.pos_x,
+            self.pos_y,
+            self.size_width,
+            self.size_height
+        )
+        for wall in walls:
+            if enemy_rect.colliderect(wall):
+                return True
+        return False
     
     def update(self, player_position, walls):
         """
@@ -119,17 +144,17 @@ class Dog(Enemy):
         """
         # Gebruik de findPlayer methode om afstand en richting te krijgen
         distance, dx, dy = self.findPlayer(player_position)
-        
+
         # === STAAT BEPALEN ===
         self._determine_state(distance)
-        
+
         # === GEDRAG PER STAAT ===
         if self.current_state == "idle":
             self._handle_idle_state()
         elif self.current_state == "chase":
-            self._handle_chase_state(dx, dy)
+            self._handle_chase_state(dx, dy, walls)
         elif self.current_state == "attack":
-            self._handle_attack_state(dx, dy)
+            self._handle_attack_state(dx, dy, walls)
     
     def _determine_state(self, distance):
         """Bepaal de staat op basis van afstand tot speler."""
@@ -153,25 +178,25 @@ class Dog(Enemy):
         if self.attack_cooldown <= 0:
             self.attacking = False
     
-    def _handle_chase_state(self, dx, dy):
+    def _handle_chase_state(self, dx, dy, walls):
         """Gedrag tijdens chase staat: beweeg richting speler."""
         # Gebruik de move methode om richting speler te bewegen
-        self.move(dx, dy, self.move_speed)
+        self.move(dx, dy, self.move_speed, walls)
     
-    def _handle_attack_state(self, dx, dy):
+    def _handle_attack_state(self, dx, dy, walls):
         """Gedrag tijdens attack staat: lunge aanval richting speler."""
         # Start de aanval (alleen de eerste keer)
         if self.attack_duration == 0:
             self.attack_duration = 15
             self.attacking = True
-        
-        # Lunge: 3x snellere beweging
+
+        # Lunge: *x snellere beweging
         lunge_speed = self.move_speed * 3
-        self.move(dx, dy, lunge_speed)
-        
+        self.move(dx, dy, lunge_speed, walls)
+
         # Verlaag attack duration
         self.attack_duration -= 1
-        
+
         # Als de aanval klaar is, start de cooldown
         if self.attack_duration <= 0:
             self.attack_cooldown = 120
