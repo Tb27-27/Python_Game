@@ -9,8 +9,8 @@ class Player:
         # start pos en hoogte
         self.pos_x = float(start_x)
         self.pos_y = float(start_y)
-        self.size_width = 16
-        self.size_height = 32
+        self.size_width = 48
+        self.size_height = 92
         
         # regels
         self.move_speed = 2

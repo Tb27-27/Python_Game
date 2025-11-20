@@ -4,8 +4,8 @@ from src.colors import *
 class UI:
     # UI class voor health bar en inventory
     
-    HEALTH_BAR_WIDTH = 80
-    HEALTH_BAR_HEIGHT = 10
+    HEALTH_BAR_WIDTH = 96
+    HEALTH_BAR_HEIGHT = 32
     HEALTH_BAR_X = 8
     HEALTH_BAR_Y = 8
     TEXT_OFFSET_X = 4
@@ -41,6 +41,7 @@ class UI:
         
         # Health tekst
         # TODO: Heel lelijk
+        # TODO: Gewoon weghalen later
         health_text = self.font.render(f"HP: {player.health}/{player.max_health}", True, (255, 255, 255))
         screen.blit(health_text, (x + bar_width + self.TEXT_OFFSET_X, y))
     
@@ -48,5 +49,5 @@ class UI:
         # Teken inventory
         # TODO: Inventory komt in het pauze scherm later
         # TODO: Inventory counter redundant
-        inv_text = self.font.render(f"Items: {len(player.inventory)}", True, (255, 255, 255))
-        screen.blit(inv_text, (8, 22))
+        if (1 < 0):
+            print("wtf")

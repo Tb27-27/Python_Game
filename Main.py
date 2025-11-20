@@ -6,19 +6,19 @@ from src.enemy import Dog
 from src.tilemap import Tilemap
 from src.light_system import LightSystem
 from src.ui import UI
-from src.colors import * 
+from src.colors import *
 
 pygame.init()
 
 GAME_CONFIG = {
-    "game_width": 512,
-    "game_height": 288,
-    "screen_width": 1280,
-    "screen_height": 720,
+    "game_width": 1440,
+    "game_height": 960,
+    "screen_width": 1440,
+    "screen_height": 960,
     "target_fps": 60,
     "game_title": "Pythy",
-    "tile_size": 32,
-    "scale_factor": 2.5
+    "tile_size": 48,
+    "scale_factor": 1
 }
 
 class Camera:
@@ -29,16 +29,13 @@ class Camera:
         self.camera_y = 0
     
     def follow_player(self, player):
-        """Camera volgt de speler, gecentreerd op het scherm"""
         self.camera_x = player.pos_x + player.size_width // 2 - self.game_width // 2
         self.camera_y = player.pos_y + player.size_height // 2 - self.game_height // 2
     
     def apply_to_position(self, x, y):
-        """Converteer wereld positie naar scherm positie"""
         return x - self.camera_x, y - self.camera_y
     
     def apply_to_rect(self, rect):
-        """Pas camera offset toe op een pygame Rect"""
         return pygame.Rect(
             rect.x - self.camera_x,
             rect.y - self.camera_y,
@@ -53,7 +50,6 @@ class Game:
         )
         pygame.display.set_caption(GAME_CONFIG["game_title"])
         
-        # Game surface is klein (16*9 tiles = 512*288)
         self.game_surface = pygame.Surface(
             (GAME_CONFIG["game_width"], GAME_CONFIG["game_height"])
         )
@@ -65,11 +61,10 @@ class Game:
         self.player_character = Player(256, 144)
         self.enemy_list = [Dog(200, 100), Dog(350, 200)]
         
-        # Laad de map met 32*32 tiles
+        # Load map with 48x48 tiles
         self.game_map = Tilemap(tile_size=GAME_CONFIG["tile_size"])
         self.game_map.load_from_file("assets/maps/cathedral_1.json")
         
-        # Camera systeem (werkt op game surface grootte)
         self.camera = Camera(
             GAME_CONFIG["game_width"],
             GAME_CONFIG["game_height"]
@@ -85,7 +80,6 @@ class Game:
             GAME_CONFIG["game_height"]
         )
         
-        # Lijst voor objecten die depth sorting nodig hebben
         self.depth_sorted_objects = []
 
     def handle_events(self):
@@ -104,42 +98,31 @@ class Game:
             return
         
         keys = pygame.key.get_pressed()
-        movement_delta_x = movement_delta_y = 0
+        dx = dy = 0
         
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-            movement_delta_x -= self.player_character.move_speed
+            dx -= self.player_character.move_speed
         if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-            movement_delta_x += self.player_character.move_speed
+            dx += self.player_character.move_speed
         if keys[pygame.K_UP] or keys[pygame.K_w]:
-            movement_delta_y -= self.player_character.move_speed
+            dy -= self.player_character.move_speed
         if keys[pygame.K_DOWN] or keys[pygame.K_s]:
-            movement_delta_y += self.player_character.move_speed
+            dy += self.player_character.move_speed
         
-        self.player_character.move(
-            movement_delta_x, 
-            movement_delta_y, 
-            self.game_map.walls
-        )
-        
-        # Update camera om speler te volgen
+        self.player_character.move(dx, dy, self.game_map.walls)
         self.camera.follow_player(self.player_character)
         
-        player_world_position = (
-            self.player_character.pos_x, 
-            self.player_character.pos_y
-        )
+        player_pos = (self.player_character.pos_x, self.player_character.pos_y)
         
-        for current_enemy in self.enemy_list:
-            current_enemy.update(player_world_position, self.game_map.walls)
-            if self.detect_collision(self.player_character, current_enemy):
+        for enemy in self.enemy_list:
+            enemy.update(player_pos, self.game_map.walls)
+            if self.detect_collision(self.player_character, enemy):
                 self.player_character.take_damage(1)
         
         if self.player_character.health <= 0:
             self.game_over()
         
-        # Update depth sorted objects lijst
         self.depth_sorted_objects = [self.player_character] + self.enemy_list
-        # Sorteer op Y positie (objecten lager op scherm worden later getekend)
         self.depth_sorted_objects.sort(key=lambda obj: obj.pos_y)
 
     def detect_collision(self, obj1, obj2):
@@ -151,54 +134,31 @@ class Game:
         )
 
     def draw(self):
-        # Teken alles op de kleine game surface
         self.game_surface.fill(DARK_GRAY)
         
-        # === LAAG 1: ACHTERGROND ===
-        self.game_map.draw_background(
-            self.game_surface, 
-            self.camera.camera_x, 
-            self.camera.camera_y
-        )
+        # --- LAYERS ---
+        self.game_map.draw_background(self.game_surface, self.camera.camera_x, self.camera.camera_y)
+        self.game_map.draw(self.game_surface, self.camera.camera_x, self.camera.camera_y)
         
-        # === LAAG 2: COLLISION LAYER (optioneel, voor zichtbaarheid) ===
-        # self.game_map.draw(self.game_surface, self.camera.camera_x, self.camera.camera_y)
-        
-        # === LAAG 3: SPELER EN ENEMIES (met depth sorting en camera offset) ===
         for obj in self.depth_sorted_objects:
-            screen_x, screen_y = self.camera.apply_to_position(obj.pos_x, obj.pos_y)
-            obj.draw_at_position(self.game_surface, screen_x, screen_y)
+            sx, sy = self.camera.apply_to_position(obj.pos_x, obj.pos_y)
+            obj.draw_at_position(self.game_surface, sx, sy)
         
-        # === LAAG 4: VOORGROND ===
-        self.game_map.draw_foreground(
-            self.game_surface, 
-            self.camera.camera_x, 
-            self.camera.camera_y
-        )
+        self.game_map.draw_foreground(self.game_surface, self.camera.camera_x, self.camera.camera_y)
         
-        # === LAAG 5: LIGHTING (met camera offset) ===
-        screen_player_x, screen_player_y = self.camera.apply_to_position(
+        px, py = self.camera.apply_to_position(
             self.player_character.pos_x, 
             self.player_character.pos_y
         )
-        self.lighting_system.apply_lighting(
-            self.game_surface, 
-            (screen_player_x, screen_player_y)
-        )
+        self.lighting_system.apply_lighting(self.game_surface, (px, py))
         
-        # === LAAG 6: UI (altijd bovenop, geen camera offset) ===
         self.user_interface.draw(self.game_surface, self.player_character)
         
         if self.is_paused:
             self.draw_pause_screen()
         
-        # === UPSCALE: Schaal game surface naar display window ===
-        scaled_surface = pygame.transform.scale(
-            self.game_surface,
-            (GAME_CONFIG["screen_width"], GAME_CONFIG["screen_height"])
-        )
-        self.display_window.blit(scaled_surface, (0, 0))
-        
+        # --- IMPORTANT: NO UPSCALING ANYMORE ---
+        self.display_window.blit(self.game_surface, (0, 0))
         pygame.display.flip()
 
     def draw_pause_screen(self):
@@ -211,32 +171,17 @@ class Game:
         
         font = pygame.font.Font(None, 36)
         text = font.render("PAUSED", True, WHITE)
-        text_rect = text.get_rect(
-            center=(
-                GAME_CONFIG["game_width"] // 2, 
-                GAME_CONFIG["game_height"] // 2
-            )
-        )
-        self.game_surface.blit(text, text_rect)
+        rect = text.get_rect(center=(GAME_CONFIG["game_width"] // 2, GAME_CONFIG["game_height"] // 2))
+        self.game_surface.blit(text, rect)
 
     def game_over(self):
         self.game_surface.fill(BLACK)
         font = pygame.font.Font(None, 36)
         text = font.render("GAME OVER", True, RED)
-        text_rect = text.get_rect(
-            center=(
-                GAME_CONFIG["game_width"] // 2, 
-                GAME_CONFIG["game_height"] // 2
-            )
-        )
-        self.game_surface.blit(text, text_rect)
-        
-        # Upscale voor display
-        scaled_surface = pygame.transform.scale(
-            self.game_surface,
-            (GAME_CONFIG["screen_width"], GAME_CONFIG["screen_height"])
-        )
-        self.display_window.blit(scaled_surface, (0, 0))
+        rect = text.get_rect(center=(GAME_CONFIG["game_width"] // 2, GAME_CONFIG["game_height"] // 2))
+        self.game_surface.blit(text, rect)
+
+        self.display_window.blit(self.game_surface, (0, 0))
         pygame.display.flip()
         
         pygame.time.wait(3000)

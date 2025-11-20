@@ -4,7 +4,7 @@ import math
 class LightSystem:
     """Fog-of-war lighting: alleen binnen lichtcirkel zichtbaar, rest pikzwart"""
     
-    def __init__(self, screen_width, screen_height, light_radius=80):
+    def __init__(self, screen_width, screen_height, light_radius=2040):
         self.screen_width_pixels = screen_width
         self.screen_height_pixels = screen_height
         self.light_radius_pixels = light_radius

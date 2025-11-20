@@ -94,8 +94,8 @@ class Dog(Enemy):
         super().__init__(start_x, start_y)
         
         # Afmetingen van de hond (aangepast voor 32*32 tiles)
-        self.size_width = 24
-        self.size_height = 16
+        self.size_width = 100
+        self.size_height = 50
         
         # Bewegingssnelheid
         self.move_speed = 1.0
