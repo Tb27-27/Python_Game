@@ -74,7 +74,7 @@ class Player:
     
     def interact(self):
         """Interactie met objecten/deur/NPC (uit te breiden)"""
-        print("[Interact] Player probeert iets te doen!")
+        pass
     
     def draw(self, screen):
         """Teken de speler als blauwe rechthoek (zonder camera offset)"""

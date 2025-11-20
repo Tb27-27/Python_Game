@@ -46,8 +46,5 @@ class UI:
         screen.blit(health_text, (x + bar_width + self.TEXT_OFFSET_X, y))
     
     def draw_inventory(self, screen, player):
-        # Teken inventory
         # TODO: Inventory komt in het pauze scherm later
-        # TODO: Inventory counter redundant
-        if (1 < 0):
-            print("wtf")
+        pass

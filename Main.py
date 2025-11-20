@@ -27,10 +27,42 @@ class Camera:
         self.game_height = game_height
         self.camera_x = 0
         self.camera_y = 0
-    
-    def follow_player(self, player):
-        self.camera_x = player.pos_x + player.size_width // 2 - self.game_width // 2
-        self.camera_y = player.pos_y + player.size_height // 2 - self.game_height // 2
+
+        # Camera deadzone box (player can move within this area without camera moving)
+        self.deadzone_width = 400
+        self.deadzone_height = 300
+
+        # Calculate deadzone boundaries (relative to screen edges)
+        self.deadzone_left = (game_width - self.deadzone_width) // 2
+        self.deadzone_right = (game_width + self.deadzone_width) // 2
+        self.deadzone_top = (game_height - self.deadzone_height) // 2
+        self.deadzone_bottom = (game_height + self.deadzone_height) // 2
+
+    def follow_player(self, player, map_width_px, map_height_px):
+        """Follow player with deadzone box, confined to map boundaries"""
+        # Calculate player center in world coordinates
+        player_center_x = player.pos_x + player.size_width // 2
+        player_center_y = player.pos_y + player.size_height // 2
+
+        # Calculate player position on screen
+        player_screen_x = player_center_x - self.camera_x
+        player_screen_y = player_center_y - self.camera_y
+
+        # Horizontal deadzone logic
+        if player_screen_x < self.deadzone_left:
+            self.camera_x = player_center_x - self.deadzone_left
+        elif player_screen_x > self.deadzone_right:
+            self.camera_x = player_center_x - self.deadzone_right
+
+        # Vertical deadzone logic
+        if player_screen_y < self.deadzone_top:
+            self.camera_y = player_center_y - self.deadzone_top
+        elif player_screen_y > self.deadzone_bottom:
+            self.camera_y = player_center_y - self.deadzone_bottom
+
+        # Clamp camera to map boundaries
+        self.camera_x = max(0, min(self.camera_x, map_width_px - self.game_width))
+        self.camera_y = max(0, min(self.camera_y, map_height_px - self.game_height))
     
     def apply_to_position(self, x, y):
         return x - self.camera_x, y - self.camera_y
@@ -71,9 +103,9 @@ class Game:
         )
         
         self.lighting_system = LightSystem(
-            GAME_CONFIG["game_width"], 
+            GAME_CONFIG["game_width"],
             GAME_CONFIG["game_height"],
-            light_radius=120
+            light_radius=250
         )
         self.user_interface = UI(
             GAME_CONFIG["game_width"], 
@@ -111,7 +143,12 @@ class Game:
         
         self.player_character.move(dx, dy, self.game_map.walls)
         self.player_character.update()
-        self.camera.follow_player(self.player_character)
+
+        # Calculate map dimensions in pixels
+        map_width_px = self.game_map.map_width * self.game_map.tile_size
+        map_height_px = self.game_map.map_height * self.game_map.tile_size
+
+        self.camera.follow_player(self.player_character, map_width_px, map_height_px)
 
         player_pos = (self.player_character.pos_x, self.player_character.pos_y)
 
@@ -148,10 +185,14 @@ class Game:
         self.game_map.draw_foreground(self.game_surface, self.camera.camera_x, self.camera.camera_y)
         
         px, py = self.camera.apply_to_position(
-            self.player_character.pos_x, 
+            self.player_character.pos_x,
             self.player_character.pos_y
         )
-        self.lighting_system.apply_lighting(self.game_surface, (px, py))
+        self.lighting_system.apply_lighting(
+            self.game_surface,
+            (px, py),
+            (self.player_character.size_width, self.player_character.size_height)
+        )
         
         self.user_interface.draw(self.game_surface, self.player_character)
         

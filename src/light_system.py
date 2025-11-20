@@ -2,7 +2,7 @@ import pygame
 import math
 
 class LightSystem:
-    """Fog-of-war lighting: alleen binnen lichtcirkel zichtbaar, rest pikzwart"""
+    """Fog-of-war lighting: alleen binnen lichtcirkel zichtbaar, rest zwart"""
     
     def __init__(self, screen_width, screen_height, light_radius=2040):
         self.screen_width_pixels = screen_width
@@ -41,28 +41,28 @@ class LightSystem:
         
         return light_mask
     
-    def apply_lighting(self, screen, player_position):
+    def apply_lighting(self, screen, player_position, player_size=(48, 92)):
         """Pas fog-of-war toe: zwarte overlay met lichtcirkel bij speler"""
-        
+
         # Maak volledig zwarte overlay (alles onzichtbaar)
         darkness_overlay = pygame.Surface(
-            (self.screen_width_pixels, self.screen_height_pixels), 
+            (self.screen_width_pixels, self.screen_height_pixels),
             pygame.SRCALPHA
         )
         darkness_overlay.fill((0, 0, 0, 255))
-        
-        # Bereken waar het licht moet schijnen (midden speler)
-        player_torso_x = int(player_position[0] + 8)
-        player_torso_y = int(player_position[1] + 16)
-        light_mask_offset_x = player_torso_x - self.light_radius_pixels
-        light_mask_offset_y = player_torso_y - self.light_radius_pixels
-        
+
+        # Bereken waar het licht moet schijnen (centrum van speler)
+        player_center_x = int(player_position[0] + player_size[0] // 2)
+        player_center_y = int(player_position[1] + player_size[1] // 2)
+        light_mask_offset_x = player_center_x - self.light_radius_pixels
+        light_mask_offset_y = player_center_y - self.light_radius_pixels
+
         # "Snee" het lichtgat in de duisternis (multiplicatie blend)
         darkness_overlay.blit(
-            self.radial_light_mask, 
+            self.radial_light_mask,
             (light_mask_offset_x, light_mask_offset_y),
             special_flags=pygame.BLEND_RGBA_MULT
         )
-        
+
         # Overlay over hele scherm (moet LAATSTE render stap zijn)
         screen.blit(darkness_overlay, (0, 0))
