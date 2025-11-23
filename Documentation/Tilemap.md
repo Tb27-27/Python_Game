@@ -1,6 +1,8 @@
 https://www.pygame.org/project/5291/7669
 https://www.youtube.com/watch?v=37phHwLtaFg
 https://thorbjorn.itch.io/tiled
+https://szadiart.itch.io/rogue-fantasy-catacombs
+https://cainos.itch.io/pixel-art-top-down-basic
 
 
 ---
@@ -11,7 +13,7 @@ Ik heb opgezocht wat voor opties er zijn voor maps, ik ga een tile systeem gebru
 
 
 Hoe ga ik de map maken?
-2 lagen
+3 lagen
 * Achtergrond
 * Collision Layer
 * Voorgrond (obstacels/objecten)

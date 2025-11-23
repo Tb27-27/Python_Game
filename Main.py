@@ -153,7 +153,17 @@ class Game:
         player_pos = (self.player_character.pos_x, self.player_character.pos_y)
 
         for enemy in self.enemy_list:
-            enemy.update(player_pos, self.game_map.walls)
+            enemy.update(
+                player_pos, 
+                self.game_map.walls,
+                tile_size=self.game_map.tile_size
+            )
+
+            enemy.separate_from_other_enemies(
+                self.enemy_list, 
+                separation_distance=90
+            )
+            
             if self.detect_collision(self.player_character, enemy):
                 self.player_character.take_damage(10)
         
@@ -175,19 +185,33 @@ class Game:
         self.game_surface.fill(DARK_GRAY)
         
         # --- LAYERS ---
-        self.game_map.draw_background(self.game_surface, self.camera.camera_x, self.camera.camera_y)
-        self.game_map.draw(self.game_surface, self.camera.camera_x, self.camera.camera_y)
+        self.game_map.draw_background(
+            self.game_surface, 
+            self.camera.camera_x, 
+            self.camera.camera_y
+        )
+
+        self.game_map.draw(
+            self.game_surface, 
+            self.camera.camera_x, 
+            self.camera.camera_y
+        )
         
         for obj in self.depth_sorted_objects:
             sx, sy = self.camera.apply_to_position(obj.pos_x, obj.pos_y)
             obj.draw_at_position(self.game_surface, sx, sy)
         
-        self.game_map.draw_foreground(self.game_surface, self.camera.camera_x, self.camera.camera_y)
+        self.game_map.draw_foreground(
+            self.game_surface, 
+            self.camera.camera_x,
+            self.camera.camera_y
+        )
         
         px, py = self.camera.apply_to_position(
             self.player_character.pos_x,
             self.player_character.pos_y
         )
+        
         self.lighting_system.apply_lighting(
             self.game_surface,
             (px, py),

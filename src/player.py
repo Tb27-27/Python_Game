@@ -13,7 +13,7 @@ class Player:
         self.size_height = 92
 
         # regels
-        self.move_speed = 8.0
+        self.move_speed = 4.0
         self.health = 100
         self.max_health = 100
         self.inventory = []

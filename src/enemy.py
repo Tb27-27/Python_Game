@@ -1,6 +1,7 @@
 import pygame
 import math
 from src.colors import *
+from .pathfinding import a_star
 
 # src/enemy.py
 
@@ -21,26 +22,55 @@ class Enemy:
         # Deze moeten door subklassen worden ingesteld
         self.size_width = 0
         self.size_height = 0
-    
-    def draw(self, screen):
+        
+    def separate_from_other_enemies(self, all_enemies, separation_distance=80):
         """
-        Teken de vijand op het scherm. Kleur hangt af van de staat.
+        Simple separation steering: push away from nearby enemies
         """
+        steer_x = 0
+        steer_y = 0
+        for other in all_enemies:
+            if other is self:
+                continue
+            dx = self.pos_x - other.pos_x
+            dy = self.pos_y - other.pos_y
+            distance = math.hypot(dx, dy)
 
-        # Replace with Images
-        color = RED if self.current_state == "chase" else GRAY
+            if 0 < distance < separation_distance:
+                # Closer = stronger push
+                strength = (separation_distance - distance) / separation_distance
+                steer_x += dx * strength * 2.0
+                steer_y += dy * strength * 2.0
+
+        # Apply the steering (with wall collision check)
+        if steer_x or steer_y:
+            self.move(steer_x, steer_y, 1.0, walls=[])
+
+    def draw(self, screen):
+        """Kleur afhankelijk van state o"""
+        if self.current_state == "attack":
+            color = ORANGE
+        elif self.current_state == "chase":
+            color = RED
+        elif self.current_state == "recover":
+            color = PURPLE
+        else:  # idle
+            color = GRAY
         pygame.draw.rect(
-            screen, 
-            color, 
+            screen,
+            color,
             (self.pos_x, self.pos_y, self.size_width, self.size_height)
         )
-    
+
     def draw_at_position(self, screen, x, y):
-        """Teken de vijand op een specifieke scherm positie (voor camera)"""
-        color = RED if self.current_state == "chase" else GRAY
+        color = {
+            "attack": ORANGE,
+            "chase": RED,
+            "recover": PURPLE,
+        }.get(self.current_state, GRAY)
         pygame.draw.rect(
-            screen, 
-            color, 
+            screen,
+            color,
             (x, y, self.size_width, self.size_height)
         )
     
@@ -111,93 +141,117 @@ class Enemy:
 
 
 class Dog(Enemy):
-    """
-    Dog vijand: Achtervolgt de speler en valt aan met een lunge aanval.
-    """
-    
     def __init__(self, start_x, start_y):
         super().__init__(start_x, start_y)
         
-        # Afmetingen van de hond (aangepast voor 32*32 tiles)
         self.size_width = 100
         self.size_height = 50
         
-        # Bewegingssnelheid
-        self.move_speed = 1.0
+        self.move_speed = 2.5
         
-        # Afstanden voor detectie en aanval
-        self.player_detection_range = 150 
-        self.attack_range = 40
+        self.player_detection_range = 600
+        self.attack_range = 200
         
-        # Aanval systeem
-        self.attack_cooldown = 0
-        # HOE LANG de aanval duurt
-        self.attack_duration = 0  
-        self.attacking = False
-    
-    def update(self, player_position, walls):
-        """
-        Update de hond elke frame:
-        - Bepaal afstand tot speler
-        - Kies juiste staat (idle/chase/attack)
-        - Voer beweging uit
-        """
-        # Gebruik de findPlayer methode om afstand en richting te krijgen
+        # Pathfinding
+        self.path = []
+        self.current_target = None
+        self.path_recalc_timer = 0
+        self.path_recalc_interval = 30   # recalculate every ~0.5 sec
+
+        # Attack timers
+        self.attack_duration = 0
+        self.max_attack_duration = 20
+        self.recovery_time = 0
+        self.max_recovery_time = 90
+
+    def update(self, player_position, walls, tile_size=48):
         distance, dx, dy = self.findPlayer(player_position)
+        
+        self.path_recalc_timer -= 1
+        
+        # ── STATE LOGIC ──
+        self._update_state(distance)          # ← this method is back!
+        
+        # ── PATH RECALCULATION (only when chasing or attacking) ──
+        if self.current_state in ("chase", "attack"):
+            if (self.path_recalc_timer <= 0 or 
+                not self.path or 
+                self._reached_current_target()):
+                
+                path = a_star(
+                    start=(self.pos_x + self.size_width//2, self.pos_y + self.size_height//2),
+                    goal=(player_position[0] + 24, player_position[1] + 46),  # player center
+                    walls=walls,
+                    tile_size=tile_size
+                )
+                self.path = path or []
+                self.path_recalc_timer = self.path_recalc_interval
+                self.current_target = self.path[0] if self.path else None
 
-        # === STAAT BEPALEN ===
-        self._determine_state(distance)
-
-        # === GEDRAG PER STAAT ===
+        # ── BEHAVIOR PER STATE ──
         if self.current_state == "idle":
-            self._handle_idle_state()
-        elif self.current_state == "chase":
-            self._handle_chase_state(dx, dy, walls)
+            pass
+        elif self.current_state == "recover":
+            self._handle_recovery()
         elif self.current_state == "attack":
-            self._handle_attack_state(dx, dy, walls)
-    
-    def _determine_state(self, distance):
-        """Bepaal de staat op basis van afstand tot speler."""
-        # Als de hond nog aan het aanvallen is (attack_duration > 0), blijf in attack state
+            self._handle_attack(dx, dy, walls)
+        else:  # chase
+            self._follow_path(walls)
+
+    # ──────────────────────────────
+    #  ALL THE MISSING METHODS BELOW
+    # ──────────────────────────────
+    def _update_state(self, distance):
+        # Still attacking or recovering → keep that state
         if self.attack_duration > 0:
             self.current_state = "attack"
-        # Check of de hond dichtbij genoeg is EN niet in cooldown
-        elif distance < self.attack_range and self.attack_cooldown <= 0:
+            return
+        if self.recovery_time > 0:
+            self.current_state = "recover"
+            return
+
+        # Normal decision
+        if distance < self.attack_range:
             self.current_state = "attack"
-        elif distance < self.player_detection_range and not self.attacking:
+            self.attack_duration = self.max_attack_duration
+        elif distance < self.player_detection_range:
             self.current_state = "chase"
         else:
             self.current_state = "idle"
-    
-    def _handle_idle_state(self):
-        """Gedrag tijdens idle staat: cooldown verlagen."""
-        if self.attack_cooldown > 0:
-            self.attack_cooldown -= 1
-        
-        # Reset attacking flag als cooldown voorbij is
-        if self.attack_cooldown <= 0:
-            self.attacking = False
-    
-    def _handle_chase_state(self, dx, dy, walls):
-        """Gedrag tijdens chase staat: beweeg richting speler."""
-        # Gebruik de move methode om richting speler te bewegen
-        self.move(dx, dy, self.move_speed, walls)
-    
-    def _handle_attack_state(self, dx, dy, walls):
-        """Gedrag tijdens attack staat: lunge aanval richting speler."""
-        # Start de aanval (alleen de eerste keer)
-        if self.attack_duration == 0:
-            self.attack_duration = 15
-            self.attacking = True
 
-        # Lunge: *x snellere beweging
+    def _follow_path(self, walls):
+        if not self.current_target:
+            return
+
+        tx, ty = self.current_target
+        dx = tx - (self.pos_x + self.size_width // 2)
+        dy = ty - (self.pos_y + self.size_height // 2)
+        dist = math.hypot(dx, dy)
+
+        # Close enough → go to next waypoint
+        if dist < 25:
+            if self.path:
+                self.path.pop(0)
+                self.current_target = self.path[0] if self.path else None
+            return
+
+        self.move(dx, dy, self.move_speed, walls)
+
+    def _reached_current_target(self):
+        if not self.current_target:
+            return True
+        dx = self.current_target[0] - (self.pos_x + self.size_width // 2)
+        dy = self.current_target[1] - (self.pos_y + self.size_height // 2)
+        return math.hypot(dx, dy) < 30
+
+    def _handle_attack(self, dx, dy, walls):
+        # Direct lunge toward player (no pathfinding during attack)
         lunge_speed = self.move_speed * 3
         self.move(dx, dy, lunge_speed, walls)
-
-        # Verlaag attack duration
+        
         self.attack_duration -= 1
-
-        # Als de aanval klaar is, start de cooldown
         if self.attack_duration <= 0:
-            self.attack_cooldown = 120
-            self.attacking = True
+            self.recovery_time = self.max_recovery_time
+
+    def _handle_recovery(self):
+        self.recovery_time -= 1
