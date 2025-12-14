@@ -1,4 +1,4 @@
-# Color constants voor de hele game
+# kleuren constants voor de hele game voor backups als er geen sprites zijn
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 DARK_GRAY = (20, 20, 20)

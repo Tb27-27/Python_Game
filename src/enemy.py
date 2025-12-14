@@ -156,7 +156,8 @@ class Dog(Enemy):
         self.path = []
         self.current_target = None
         self.path_recalc_timer = 0
-        self.path_recalc_interval = 30   # recalculate every ~0.5 sec
+        # 30 frames = 0.5 seconden
+        self.path_recalc_interval = 30  
 
         # Attack timers
         self.attack_duration = 0
@@ -169,18 +170,19 @@ class Dog(Enemy):
         
         self.path_recalc_timer -= 1
         
-        # ── STATE LOGIC ──
-        self._update_state(distance)          # ← this method is back!
+        # attack / sleep / etc. gebasseerd op asfstand van spelen
+        self._update_state(distance)
         
-        # ── PATH RECALCULATION (only when chasing or attacking) ──
+        # path calculatiosn
         if self.current_state in ("chase", "attack"):
             if (self.path_recalc_timer <= 0 or 
                 not self.path or 
                 self._reached_current_target()):
                 
+                # HIER ZAT DE FOUT:
                 path = a_star(
-                    start=(self.pos_x + self.size_width//2, self.pos_y + self.size_height//2),
-                    goal=(player_position[0] + 24, player_position[1] + 46),  # player center
+                    start_pos=(self.pos_x + self.size_width//2, self.pos_y + self.size_height//2),
+                    goal_pos=(player_position[0] + 24, player_position[1] + 46),
                     walls=walls,
                     tile_size=tile_size
                 )
@@ -188,7 +190,7 @@ class Dog(Enemy):
                 self.path_recalc_timer = self.path_recalc_interval
                 self.current_target = self.path[0] if self.path else None
 
-        # ── BEHAVIOR PER STATE ──
+        # behaviour state
         if self.current_state == "idle":
             pass
         elif self.current_state == "recover":
@@ -198,11 +200,8 @@ class Dog(Enemy):
         else:  # chase
             self._follow_path(walls)
 
-    # ──────────────────────────────
-    #  ALL THE MISSING METHODS BELOW
-    # ──────────────────────────────
     def _update_state(self, distance):
-        # Still attacking or recovering → keep that state
+        # attacking na cooldown
         if self.attack_duration > 0:
             self.current_state = "attack"
             return
@@ -210,7 +209,7 @@ class Dog(Enemy):
             self.current_state = "recover"
             return
 
-        # Normal decision
+        # als je dichtbij bent chace of attack
         if distance < self.attack_range:
             self.current_state = "attack"
             self.attack_duration = self.max_attack_duration
@@ -228,7 +227,6 @@ class Dog(Enemy):
         dy = ty - (self.pos_y + self.size_height // 2)
         dist = math.hypot(dx, dy)
 
-        # Close enough → go to next waypoint
         if dist < 25:
             if self.path:
                 self.path.pop(0)
@@ -245,7 +243,7 @@ class Dog(Enemy):
         return math.hypot(dx, dy) < 30
 
     def _handle_attack(self, dx, dy, walls):
-        # Direct lunge toward player (no pathfinding during attack)
+        # lunge naar player zonder pathfinding, moet een rechte attack zijn
         lunge_speed = self.move_speed * 3
         self.move(dx, dy, lunge_speed, walls)
         

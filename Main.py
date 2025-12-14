@@ -28,11 +28,11 @@ class Camera:
         self.camera_x = 0
         self.camera_y = 0
 
-        # Camera deadzone box (player can move within this area without camera moving)
+        # camera deadzone size
         self.deadzone_width = 400
         self.deadzone_height = 300
 
-        # Calculate deadzone boundaries (relative to screen edges)
+        # camera deadzone boundaries
         self.deadzone_left = (game_width - self.deadzone_width) // 2
         self.deadzone_right = (game_width + self.deadzone_width) // 2
         self.deadzone_top = (game_height - self.deadzone_height) // 2
@@ -40,27 +40,27 @@ class Camera:
 
     def follow_player(self, player, map_width_px, map_height_px):
         """Follow player with deadzone box, confined to map boundaries"""
-        # Calculate player center in world coordinates
+        # player location world
         player_center_x = player.pos_x + player.size_width // 2
         player_center_y = player.pos_y + player.size_height // 2
 
-        # Calculate player position on screen
+        # player location screen
         player_screen_x = player_center_x - self.camera_x
         player_screen_y = player_center_y - self.camera_y
 
-        # Horizontal deadzone logic
+        # horizontaal deadzone camera boundary
         if player_screen_x < self.deadzone_left:
             self.camera_x = player_center_x - self.deadzone_left
         elif player_screen_x > self.deadzone_right:
             self.camera_x = player_center_x - self.deadzone_right
 
-        # Vertical deadzone logic
+        # verticaal deadzone camera boundary
         if player_screen_y < self.deadzone_top:
             self.camera_y = player_center_y - self.deadzone_top
         elif player_screen_y > self.deadzone_bottom:
             self.camera_y = player_center_y - self.deadzone_bottom
 
-        # Clamp camera to map boundaries
+        # clamp camera
         self.camera_x = max(0, min(self.camera_x, map_width_px - self.game_width))
         self.camera_y = max(0, min(self.camera_y, map_height_px - self.game_height))
     
@@ -90,13 +90,16 @@ class Game:
         self.is_running = True
         self.is_paused = False
         
-        self.player_character = Player(256, 144)
-        self.enemy_list = [Dog(200, 100), Dog(350, 200)]
+        self.player_character = Player(1035, 800)
+        self.enemy_list = [Dog(500, 400), Dog(1500, 400)]
         
-        # Load map with 48x48 tiles
+        # laad map with 48x48 tiles
         self.game_map = Tilemap(tile_size=GAME_CONFIG["tile_size"])
-        self.game_map.load_from_file("assets/maps/cathedral_1.json")
         
+        # HIER ZIJN DE AANGEPASTE BESTANDSNAMEN:
+        self.game_map.load_from_file("assets/maps/Garden_1.json")
+        self.game_map.load_background_image("assets/backgrounds/background_garden.png")
+
         self.camera = Camera(
             GAME_CONFIG["game_width"],
             GAME_CONFIG["game_height"]
@@ -144,7 +147,7 @@ class Game:
         self.player_character.move(dx, dy, self.game_map.walls)
         self.player_character.update()
 
-        # Calculate map dimensions in pixels
+        # map dimensions
         map_width_px = self.game_map.map_width * self.game_map.tile_size
         map_height_px = self.game_map.map_height * self.game_map.tile_size
 
@@ -184,28 +187,17 @@ class Game:
     def draw(self):
         self.game_surface.fill(DARK_GRAY)
         
-        # --- LAYERS ---
+        #teken de vloer (plaatje)
         self.game_map.draw_background(
             self.game_surface, 
             self.camera.camera_x, 
             self.camera.camera_y
         )
-
-        self.game_map.draw(
-            self.game_surface, 
-            self.camera.camera_x, 
-            self.camera.camera_y
-        )
         
+        # teken speler en vijanden
         for obj in self.depth_sorted_objects:
             sx, sy = self.camera.apply_to_position(obj.pos_x, obj.pos_y)
             obj.draw_at_position(self.game_surface, sx, sy)
-        
-        self.game_map.draw_foreground(
-            self.game_surface, 
-            self.camera.camera_x,
-            self.camera.camera_y
-        )
         
         px, py = self.camera.apply_to_position(
             self.player_character.pos_x,
@@ -223,7 +215,6 @@ class Game:
         if self.is_paused:
             self.draw_pause_screen()
         
-        # --- IMPORTANT: NO UPSCALING ANYMORE ---
         self.display_window.blit(self.game_surface, (0, 0))
         pygame.display.flip()
 

@@ -21,3 +21,5 @@ Hoe ga ik de map maken?
 De Achtergrond maak ik eerst met de hulp van tiled, een programma waar je makkelijk tilemaps kan maken en exporteren.
 De collision layer gaat daar boven, dus waar enemies en de player niet door heen kunnen met hulp van een array.
 Daarboven doe ik de voorgrond layer, sprites waar de speler achter kan staan.
+
+Edit: Ik ga geen tiled gebruiken.

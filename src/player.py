@@ -12,16 +12,17 @@ class Player:
         self.size_width = 48
         self.size_height = 92
 
-        # regels
+        # player settings
         self.move_speed = 4.0
         self.health = 100
         self.max_health = 100
         self.inventory = []
 
-        # Invincibility frames (i-frames)
+        # i frames
         self.invincible = False
         self.invincibility_timer = 0
-        self.invincibility_duration = 150  # 2.5 seconden bij 60 FPS
+          # 2.5 seconden bij 60 FPS
+        self.invincibility_duration = 150
     
     def move(self, delta_x, delta_y, walls):
         """Beweeg speler met aparte X- en Y-collision (geen 'tunneling')"""
@@ -53,7 +54,7 @@ class Player:
     
     def update(self):
         """Update player state (i-frames, etc.)"""
-        # Update invincibility timer
+        # invincibility timer
         if self.invincibility_timer > 0:
             self.invincibility_timer -= 1
             self.invincible = True
@@ -89,7 +90,7 @@ class Player:
     
     def draw_at_position(self, screen, x, y):
         """Teken de speler op een specifieke scherm positie (voor camera)"""
-        # Flash effect tijdens invincibility (elke 10 frames wissel)
+        # effect tijdens invincibility (elke 10 frames wissel)
         if self.invincible and (self.invincibility_timer // 5) % 2 == 0:
             return  # Skip tekenen = flash effect
 
