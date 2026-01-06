@@ -1,6 +1,14 @@
 # Python_Game
 
-How to start "Pythy"
+---
+
+## How to start "Pythy"
+
+in "dist" open main.exe
+
+---
+
+## How to start "Pythy" if the exe does not work
 
 cmd
 
@@ -19,3 +27,4 @@ https://www.geeksforgeeks.org/python/pygame-tutorial
 https://realpython.com/pygame-a-primer/
 https://www.pygame.org/docs/
 https://www.youtube.com/watch?v=rmobkgItFkk
+https://dssdiego.itch.io/simple-pixel-art-character 
